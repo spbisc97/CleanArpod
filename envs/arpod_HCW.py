@@ -111,7 +111,7 @@ class HCWSE2Env(gym.Env):
         # Success tolerances
         pos_tol: float = 2.0,       # [m]
         vel_tol: float = 0.05,      # [m/s]
-        theta_tol: float = math.radians(2.0),  # [rad]
+        theta_tol: float = 0.7,  # [rad]
         spawn_radius: Tuple[float, float] = (5.0, 50.0),  # [m] min/max spawn distance
         spawn_angle: Tuple[float, float] = (1.5, 1.7),  # [rad] min/max spawn angle
         seed: Optional[int] = None,
@@ -249,10 +249,14 @@ class HCWSE2Env(gym.Env):
         
         
         reward += reward_shaping
-        reward -= self.w_v * v_norm
+        # reward -= self.w_v * v_norm
         reward -= self.w_omega * abs(omega)
         reward -= self.w_u * u_thrust
         reward -= self.w_u * abs(u_alpha)
+        
+        if p_norm < self.pos_tol*2:
+            reward +=  0.1*(self.theta_tol / (abs(theta)+self.theta_tol))
+            reward +=  0.1*(self.vel_tol / (v_norm+self.vel_tol))
 
         # Termination conditions
         terminated = False
@@ -278,7 +282,7 @@ class HCWSE2Env(gym.Env):
             # close enough in position, but attitude and velocity not aligned
             terminated = True
             success = False
-            done_reason = "velocity_omega_fail"
+            done_reason = "velocity_theta_fail"
         elif abs(omega) > self.omega_limit:
             # not enforced, but we can terminate if it runs away
             terminated = True
@@ -297,13 +301,13 @@ class HCWSE2Env(gym.Env):
             
         # add rewards for staying alive
         if terminated and not success:
-            reward -= 100.0  # big penalty for failure
+            reward -= 50.0  # big penalty for failure
             
         if not terminated and not truncated:
             reward += 0.1  # small reward for each step alive
 
         if terminated and success:
-            reward += 200.0
+            reward += 50.0
         
         
         
@@ -318,7 +322,7 @@ class HCWSE2Env(gym.Env):
         
         self._last_info = info
         self.history.append(self.state.copy())
-        self.action_history.append(np.array([u_thrust, u_alpha], dtype=np.float32))
+        self.action_history.append(np.array([u_thrust*self.T_max, u_alpha*self.alpha_max], dtype=np.float32))
         self.reward_history.append(reward)
         
         return obs, reward, terminated, truncated, info
@@ -368,6 +372,7 @@ class HCWSE2Env(gym.Env):
             axs[6].plot(t, trust, label="trust")
             axs[7].plot(t, alpha, label="alpha")
             axs[8].plot(t, reward_history, label="reward")
+            axs[8].set_yscale('symlog', linthresh=1.0)
             axs[0].set_title(f"Trajectory History,{self._last_info.get('done_reason', 'N/A')}")
             for ax in axs:
                 ax.legend()
@@ -417,7 +422,7 @@ class HCWSE2Env(gym.Env):
 # Quick smoke test (no SB3)
 # ----------------------------
 if __name__ == "__main__":
-    env = HCWSE2Env(render_mode="rgb_array", render_folder="./trajectories")
+    env = HCWSE2Env(render_mode="rgb_array", render_folder="./trajectories",spawn_radius=(2.5, 5.0))
     obs, info = env.reset(seed=0)
     print("Initial:", obs, info)
     # simple heuristic: thrust toward -position bearing, damp rotation toward 0
