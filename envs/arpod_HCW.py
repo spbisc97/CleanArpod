@@ -93,9 +93,9 @@ class HCWSE2Env(gym.Env):
         self,
         n: float = 0.0011,          # [rad/s] mean motion (LEO ~ 90 min period)
         dt: float = 1.0,            # [s] integration step
-        m: float = 8.0,             # [kg] small CubeSat mass
+        m: float = 16.0,             # [kg] small CubeSat mass
         T_max: float = 0.1,        # [N] max thrust (cold-gas class)
-        alpha_max: float = 0.02,    # [rad/s^2] max rotational acceleration
+        alpha_max: float = 0.01,    # [rad/s^2] max rotational acceleration
         pos_limit: float = 500.0,  # [m] keep-out bound (episode terminates if exceeded)
         v_limit: float = 50.0,      # [m/s]
         theta_limit: float = math.pi,  # [rad]
