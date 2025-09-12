@@ -262,6 +262,7 @@ class HCWSE2Env(gym.Env):
         terminated = False
         success = False
         truncated = False  # we use 'terminated' only here
+        unsafe = False
         if (p_norm < self.pos_tol) and (v_norm < self.vel_tol) and (abs(theta) < self.theta_tol):
             terminated = True
             success = True
@@ -273,16 +274,19 @@ class HCWSE2Env(gym.Env):
             terminated = True
             success = False
             done_reason = "attitude_fail"
+            unsafe = True  # unsafe if docked but attitude not aligned
         elif (p_norm < self.pos_tol) and (abs(theta) < self.theta_tol):
             # close enough in position and attitude, but velocity not aligned
             terminated = True
             success = False
             done_reason = "velocity_fail"
+            unsafe = True  # unsafe if docked but velocity not aligned
         elif (p_norm < self.pos_tol):
             # close enough in position, but attitude and velocity not aligned
             terminated = True
             success = False
             done_reason = "velocity_theta_fail"
+            unsafe = True  # unsafe if docked but velocity and attitude not aligned
         elif abs(omega) > self.omega_limit:
             # not enforced, but we can terminate if it runs away
             terminated = True
@@ -314,6 +318,7 @@ class HCWSE2Env(gym.Env):
         info = {
             "is_success": success,
             "done_reason": done_reason,
+            "is_unsafe": unsafe,
             "p_norm": p_norm,
             "v_norm": v_norm,
             "u_thrust": u_thrust,
