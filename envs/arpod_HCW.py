@@ -93,7 +93,7 @@ class HCWSE2Env(gym.Env):
         self,
         n: float = 0.0011,          # [rad/s] mean motion (LEO ~ 90 min period)
         dt: float = 1.0,            # [s] integration step
-        m: float = 16.0,             # [kg] small CubeSat mass
+        m: float = 20.0,             # [kg] small CubeSat mass
         T_max: float = 0.1,        # [N] max thrust (cold-gas class)
         alpha_max: float = 0.01,    # [rad/s^2] max rotational acceleration
         pos_limit: float = 500.0,  # [m] keep-out bound (episode terminates if exceeded)
@@ -112,7 +112,7 @@ class HCWSE2Env(gym.Env):
         pos_tol: float = 2.0,       # [m]
         vel_tol: float = 0.05,      # [m/s]
         theta_tol: float = 0.7,  # [rad]
-        spawn_radius: Tuple[float, float] = (5.0, 50.0),  # [m] min/max spawn distance
+        spawn_radius: Tuple[float, float] = (5.0, 100.0),  # [m] min/max spawn distance
         spawn_angle: Tuple[float, float] = (1.5, 1.7),  # [rad] min/max spawn angle
         seed: Optional[int] = None,
         render_mode: Optional[str] = None,
@@ -255,8 +255,8 @@ class HCWSE2Env(gym.Env):
         reward -= self.w_u * abs(u_alpha)
         
         if p_norm < self.pos_tol*2:
-            reward +=  0.1*(self.theta_tol / (abs(theta)+self.theta_tol))
-            reward +=  0.1*(self.vel_tol / (v_norm+self.vel_tol))
+            reward +=  0.01*(self.theta_tol / (abs(theta)+self.theta_tol))
+            reward +=  0.01*(self.vel_tol / (v_norm+self.vel_tol))
 
         # Termination conditions
         terminated = False
@@ -307,7 +307,7 @@ class HCWSE2Env(gym.Env):
             reward += 0.1  # small reward for each step alive
 
         if terminated and success:
-            reward += 50.0
+            reward += 100.0 + 100.0*(self.max_steps - self.steps)/self.max_steps  # big reward for success, slightly higher if faster
         
         
         
