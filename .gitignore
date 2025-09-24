@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 trajectories/
 SafeGym/
+.vscode/settings.json
